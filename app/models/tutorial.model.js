@@ -1,9 +1,4 @@
-const { Redis } = require("ioredis");
 const sql = require("./db.js");
-var redis = new Redis({
-  host: '172.233.110.158',
-  port: 6379,
-});
 
 // constructor
 const Tutorial = function (tutorial) {
@@ -41,16 +36,8 @@ Tutorial.findById = (id, result) => {
       result(err, null);
       return;
     }
-    const tuto = await redis.get(`tuto${id}`);
-    if (tuto) {
-      console.log("from cache:", tuto);
-      result(null, tuto);
-      return;
-    }
     if (res.rows) {
       console.log("found tutorial: ", res.rows);
-      await redis.set(`tuto${id}`, JSON.stringify(res.rows));
-      await redis.expire(`tuto${id}`, 10)
       result(null, res.rows);
       return;
     }
@@ -65,20 +52,12 @@ Tutorial.getAll = async (title, result) => {
   if (title) {
     query += ` WHERE title LIKE '%${title}%'`;
   }
-  const tutos = await redis.get('tutos');
-  if (tutos) {
-    console.log(tutos);
-
-    result(null, tutos);
-    return;
-  }
   sql.query(query, async (err, res) => {
     if (err) {
       console.log("error: ", err);
       result(null, err);
       return;
     }
-    await redis.set('tutos', JSON.stringify(res.rows));
     result(null, res.rows);
   });
 };
